@@ -1,0 +1,12 @@
+langchain-ollama
+langchain-core
+langchain-chroma
+fastapi
+uvicorn
+jinja2
+pandas
+requests
+beautifulsoup4
+python-multipart
+chromadb
+httpx

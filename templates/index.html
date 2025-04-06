@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHL Assessment Recommendation System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        .result-card {
+            margin-bottom: 1rem;
+            transition: all 0.3s;
+        }
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 2rem 0;
+        }
+        .example-query {
+            cursor: pointer;
+        }
+        .example-query:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="pb-3 mb-4 border-bottom">
+            <h1 class="display-5 fw-bold">SHL Assessment Recommendation System</h1>
+            <p class="lead">Find the right assessments for your hiring needs</p>
+        </header>
+
+        <div class="row g-4 py-3">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="inputTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="query-tab" data-bs-toggle="tab" data-bs-target="#query-pane" type="button" role="tab">Query</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="url-tab" data-bs-toggle="tab" data-bs-target="#url-pane" type="button" role="tab">Job URL</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-pane" type="button" role="tab">Job Description</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="inputTabContent">
+                            <div class="tab-pane fade show active" id="query-pane" role="tabpanel" tabindex="0">
+                                <form id="queryForm">
+                                    <div class="mb-3">
+                                        <label for="queryInput" class="form-label">Enter your query</label>
+                                        <input type="text" class="form-control" id="queryInput" placeholder="e.g., Java developers who can collaborate with business teams">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Get Recommendations</button>
+                                </form>
+                            </div>
+                            <div class="tab-pane fade" id="url-pane" role="tabpanel" tabindex="0">
+                                <form id="urlForm">
+                                    <div class="mb-3">
+                                        <label for="urlInput" class="form-label">Enter job description URL</label>
+                                        <input type="url" class="form-control" id="urlInput" placeholder="https://example.com/job-description">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Get Recommendations</button>
+                                </form>
+                            </div>
+                            <div class="tab-pane fade" id="text-pane" role="tabpanel" tabindex="0">
+                                <form id="textForm">
+                                    <div class="mb-3">
+                                        <label for="textInput" class="form-label">Paste job description</label>
+                                        <textarea class="form-control" id="textInput" rows="5" placeholder="Paste the full job description here..."></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Get Recommendations</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Example Queries</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item example-query">I am hiring for Java developers who can also collaborate effectively with my business teams. Looking for an assessment(s) that can be completed in 40 minutes.</li>
+                            <li class="list-group-item example-query">Looking to hire mid-level professionals who are proficient in Python, SQL and Java Script. Need an assessment package that can test all skills with max duration of 60 minutes.</li>
+                            <li class="list-group-item example-query">I need to assess candidates for analytical thinking and personality traits for an analyst position. Time limit is less than 30 minutes.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Finding the best assessments for your needs...</p>
+        </div>
+
+        <div id="results" class="row g-4 py-3"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Form submission handlers
+            document.getElementById('queryForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const query = document.getElementById('queryInput').value;
+                if (query) {
+                    getRecommendations({ query: query });
+                }
+            });
+
+            document.getElementById('urlForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const url = document.getElementById('urlInput').value;
+                if (url) {
+                    getRecommendations({ url: url });
+                }
+            });
+
+            document.getElementById('textForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const text = document.getElementById('textInput').value;
+                if (text) {
+                    getRecommendations({ query: text });
+                }
+            });
+
+            // Example query click handlers
+            document.querySelectorAll('.example-query').forEach(item => {
+                item.addEventListener('click', function() {
+                    document.getElementById('queryInput').value = this.textContent;
+                    // Switch to query tab
+                    const queryTab = document.getElementById('query-tab');
+                    const tabInstance = new bootstrap.Tab(queryTab);
+                    tabInstance.show();
+                    document.getElementById('queryInput').focus();
+                });
+            });
+
+            // Function to get recommendations
+            function getRecommendations(params) {
+                const resultsDiv = document.getElementById('results');
+                const loadingDiv = document.getElementById('loading');
+                
+                // Show loading indicator
+                loadingDiv.style.display = 'block';
+                resultsDiv.innerHTML = '';
+                
+                // Build URL with query parameters
+                const url = new URL('/api/recommend', window.location.origin);
+                Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+                
+                // Make API request
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Hide loading indicator
+                        loadingDiv.style.display = 'none';
+                        
+                        // Handle errors
+                        if (data.error) {
+                            resultsDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                            return;
+                        }
+                        
+                        // Display results
+                        if (data.recommendations && data.recommendations.length > 0) {
+                            data.recommendations.forEach((assessment, index) => {
+                                resultsDiv.innerHTML += createAssessmentCard(assessment, index);
+                            });
+                        } else {
+                            resultsDiv.innerHTML = '<div class="alert alert-info">No matching assessments found. Try a different query.</div>';
+                        }
+                    })
+                    .catch(error => {
+                        loadingDiv.style.display = 'none';
+                        resultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                    });
+            }
+            
+            // Function to create assessment card HTML
+            function createAssessmentCard(assessment, index) {
+                return `
+                    <div class="col-md-6">
+                        <div class="card result-card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">${assessment.name}</h5>
+                                <span class="badge bg-primary">${assessment.type}</span>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush mb-3">
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Remote Testing:</span>
+                                        <span class="badge ${assessment.remote_testing === 'Yes' ? 'bg-success' : 'bg-secondary'}">${assessment.remote_testing}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Adaptive/IRT Support:</span>
+                                        <span class="badge ${assessment.adaptive_support === 'Yes' ? 'bg-success' : 'bg-secondary'}">${assessment.adaptive_support}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Duration:</span>
+                                        <span>${assessment.duration}</span>
+                                    </li>
+                                </ul>
+                                <p class="card-text">${assessment.explanation}</p>
+                            </div>
+                            <div class="card-footer">
+                                <a href="${assessment.url}" target="_blank" class="btn btn-sm btn-outline-primary">View Assessment</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
